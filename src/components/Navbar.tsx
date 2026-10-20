@@ -62,10 +62,10 @@ export default function Navbar() {
             Toronto, ON, M6R 1P1
           </a>
           <a
-            href="mailto:jeffery071004@gmail.com"
+            href="mailto:4thquarterph@gmail.com"
             className="text-[11px] text-white transition-colors hover:text-roseGold"
           >
-            jeffery071004@gmail.com
+            4thquarterph@gmail.com
           </a>
         </div>
       </nav>
