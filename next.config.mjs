@@ -4,7 +4,7 @@ const nextConfig = {
   output: "export",
 
   basePath:'/4thqph-showcase',
-  assetPrefix:'/4thqph-showcase',
+  assetPrefix:'/4thqph-showcase/',
   images: { unoptimized: true},
   
   eslint: {
