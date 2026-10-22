@@ -24,7 +24,7 @@ export default function Navbar() {
           className="flex h-12 shrink-0 items-center justify-self-start"
         >
           <img
-            src="/4Q_Logo.png"
+            src={`${process.env.NEXT_PUBLIC_BASE_PATH || ""}/4Q_Logo.png`}
             alt="4Q Logo"
             className="h-12 w-auto object-contain"
           />

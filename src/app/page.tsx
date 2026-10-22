@@ -22,14 +22,14 @@ export default function HomePage() {
           <div className="grid w-full grid-cols-1 gap-4 lg:grid-cols-2 lg:items-start lg:gap-6">
             <div className="aspect-[4/3] w-full overflow-hidden rounded-lg lg:aspect-[3/4] lg:mt-16">
               <img
-                src="/home_1.JPG"
+                src={`${process.env.NEXT_PUBLIC_BASE_PATH || ""}/home_1.JPG`}
                 alt="4th Quarter training"
                 className="h-full w-full object-cover object-center"
               />
             </div>
             <div className="aspect-[4/3] w-full overflow-hidden rounded-lg lg:aspect-square">
               <img
-                src="/home_2.JPG"
+                src={`${process.env.NEXT_PUBLIC_BASE_PATH || ""}/home_2.JPG`}
                 alt="4th Quarter conditioning"
                 className="h-full w-full object-cover object-center"
               />

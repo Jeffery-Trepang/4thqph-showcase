@@ -24,7 +24,7 @@ export default function AboutPage() {
         <div className="mx-auto grid max-w-6xl items-center gap-12 lg:grid-cols-2">
           <div className="aspect-[4/3] w-full overflow-hidden rounded-lg">
             <img
-              src="/about_1.JPG"
+              src={`${process.env.NEXT_PUBLIC_BASE_PATH || ""}/about_1.JPG`}
               alt="4th Quarter coaching"
               className="h-full w-full object-cover object-center"
             />
@@ -60,7 +60,7 @@ export default function AboutPage() {
         <div className="mx-auto grid max-w-6xl items-center gap-12 lg:grid-cols-2">
           <div className="aspect-[4/3] w-full overflow-hidden rounded-lg">
             <img
-              src="/about_2.jpg"
+              src={`${process.env.NEXT_PUBLIC_BASE_PATH || ""}/about_2.jpg`}
               alt="John Piazza"
               className="h-full w-full object-cover object-center"
             />
