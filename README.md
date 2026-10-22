@@ -75,3 +75,5 @@ npx serve out
   populated (today, upcoming, recent and history sessions).
 - All photos live in `/public` and are cropped with `object-fit: cover` inside
   fixed aspect-ratio containers (the logo uses `object-contain`).
+
+
