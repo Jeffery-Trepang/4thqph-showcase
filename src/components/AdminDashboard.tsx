@@ -1,32 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { SESSION_TYPES, sessionTypeRank } from "@/lib/sessions";
-
-interface Booking {
-  id: number;
-  sessionId: number;
-  firstName: string;
-  lastName: string;
-  email: string;
-  participants: number;
-  gender: string;
-  attended: boolean;
-  createdAt: string;
-}
-
-interface Session {
-  id: number;
-  date: string;
-  startTime: string;
-  endTime: string;
-  type: string;
-  notes: string | null;
-  status: string;
-  createdAt: string;
-  bookings: Booking[];
-}
+import { getMockSessions, type MockSession } from "@/lib/mock-data";
 
 function prettyDate(iso: string): string {
   const [y, m, d] = iso.split("-").map(Number);
@@ -45,7 +21,7 @@ function todayISO(): string {
   ).padStart(2, "0")}`;
 }
 
-function byDateTime(a: Session, b: Session, desc: boolean): number {
+function byDateTime(a: MockSession, b: MockSession, desc: boolean): number {
   const ka = `${a.date} ${a.startTime}`;
   const kb = `${b.date} ${b.startTime}`;
   if (ka < kb) return desc ? 1 : -1;
@@ -53,9 +29,8 @@ function byDateTime(a: Session, b: Session, desc: boolean): number {
   return sessionTypeRank(a.type) - sessionTypeRank(b.type);
 }
 
-export default function AdminDashboard() {
-  const router = useRouter();
-  const [sessions, setSessions] = useState<Session[]>([]);
+export default function AdminDashboard({ onLogout }: { onLogout: () => void }) {
+  const [sessions, setSessions] = useState<MockSession[]>([]);
   const [attendance, setAttendance] = useState<Record<number, boolean>>({});
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
@@ -78,10 +53,9 @@ export default function AdminDashboard() {
     message: string;
   } | null>(null);
 
-  const loadData = useCallback(async () => {
-    const res = await fetch("/api/sessions");
-    const data = await res.json();
-    const list: Session[] = res.ok ? data.sessions ?? [] : [];
+  // Demo Mode: load fake data from local mock-data (no API, no database).
+  useEffect(() => {
+    const list = getMockSessions();
     setSessions(list);
     const map: Record<number, boolean> = {};
     for (const s of list) {
@@ -90,10 +64,6 @@ export default function AdminDashboard() {
     setAttendance(map);
     setLoading(false);
   }, []);
-
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
 
   // "today" is derived from local time, so date comparisons never shift due to UTC.
   const today = todayISO();
@@ -114,70 +84,72 @@ export default function AdminDashboard() {
     setAttendance((prev) => ({ ...prev, [bookingId]: !prev[bookingId] }));
   }
 
-  async function handleCreate(e: React.FormEvent) {
+  function handleCreate(e: React.FormEvent) {
     e.preventDefault();
     setFormStatus(null);
-    const res = await fetch("/api/sessions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+    if (!form.date || !form.startTime || !form.endTime) {
+      setFormStatus({
+        status: "error",
+        message: "Please fill date, start and end time.",
+      });
+      return;
+    }
+    // Demo Mode: update local React state only.
+    setSessions((prev) => {
+      const nextId = Math.max(0, ...prev.map((s) => s.id)) + 1;
+      const created: MockSession = {
+        id: nextId,
         date: form.date,
         startTime: form.startTime,
         endTime: form.endTime,
         type: form.type,
         notes: form.notes || null,
-      }),
+        status: "active",
+        createdAt: new Date().toISOString(),
+        bookings: [],
+      };
+      return [created, ...prev];
     });
-    const data = await res.json();
-    if (!res.ok) {
-      setFormStatus({ status: "error", message: data.error || "Failed to create session" });
-      return;
-    }
-    setFormStatus({ status: "success", message: "Session created" });
+    setFormStatus({ status: "success", message: "Session created (demo only)." });
     setForm({ date: "", startTime: "", endTime: "", type: SESSION_TYPES[0], notes: "" });
-    await loadData();
   }
 
-  async function handleCancel(id: number) {
+  function handleCancel(id: number) {
     if (
       !window.confirm(
-        "Cancel this session? A cancellation email will be sent to each registered client."
+        "Cancel this session? (Demo Mode: no email will be sent.)"
       )
     ) {
       return;
     }
-    const res = await fetch(`/api/sessions/${id}/cancel`, { method: "POST" });
-    const data = await res.json();
-    if (!res.ok) {
-      window.alert(data.error || "Failed to cancel session");
-      return;
-    }
-    setMessage(`Session cancelled${data.emailed ? ` — ${data.emailed} email(s) sent` : ""}.`);
-    await loadData();
+    // Demo Mode: move to History in local state only — no API, no emails.
+    setSessions((prev) =>
+      prev.map((s) => (s.id === id ? { ...s, status: "cancelled" } : s))
+    );
+    setMessage("Session cancelled (demo only — no email sent).");
   }
 
-  async function handleSave(session: Session) {
-    const bookings = session.bookings.map((b) => ({
-      id: b.id,
-      attended: !!attendance[b.id],
-    }));
-    const res = await fetch(`/api/sessions/${session.id}/complete`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ bookings }),
-    });
-    const data = await res.json();
-    if (!res.ok) {
-      window.alert(data.error || "Failed to save attendance");
-      return;
-    }
-    setMessage("Attendance saved. Session moved to History.");
-    await loadData();
+  function handleSave(session: MockSession) {
+    // Demo Mode: mark completed + record attendance in local state only.
+    setSessions((prev) =>
+      prev.map((s) =>
+        s.id === session.id
+          ? {
+              ...s,
+              status: "completed",
+              bookings: s.bookings.map((b) => ({
+                ...b,
+                attended: !!attendance[b.id],
+              })),
+            }
+          : s
+      )
+    );
+    setMessage("Attendance saved. Session moved to History (demo only).");
   }
 
-  async function handleLogout() {
-    await fetch("/api/admin/logout", { method: "POST" });
-    router.refresh();
+  function handleLogout() {
+    onLogout();
   }
 
   return (

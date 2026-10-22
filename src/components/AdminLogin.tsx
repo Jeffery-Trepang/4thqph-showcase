@@ -1,34 +1,22 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 
-export default function AdminLogin() {
-  const router = useRouter();
+// Demo Mode: there is no backend, so the admin password is checked in the
+// browser. Use the password below to explore the dashboard.
+const DEMO_ADMIN_PASSWORD = "4qph-admin-2024";
+
+export default function AdminLogin({ onSuccess }: { onSuccess: () => void }) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
 
-  async function handleSubmit(e: React.FormEvent) {
+  function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setLoading(true);
-    setError("");
-    try {
-      const res = await fetch("/api/admin/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error || "Login failed");
-        return;
-      }
-      router.refresh();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Login failed");
-    } finally {
-      setLoading(false);
+    if (password === DEMO_ADMIN_PASSWORD) {
+      setError("");
+      onSuccess();
+    } else {
+      setError("Incorrect password.");
     }
   }
 
@@ -59,11 +47,15 @@ export default function AdminLogin() {
 
         <button
           type="submit"
-          disabled={loading}
-          className="mt-6 w-full rounded-md bg-black px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-neutral-700 disabled:opacity-50"
+          className="mt-6 w-full rounded-md bg-black px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-neutral-700"
         >
-          {loading ? "Checking…" : "Log in"}
+          Log in
         </button>
+
+        <p className="mt-4 rounded-md bg-neutral-100 px-3 py-2 text-xs text-neutral-500">
+          Demo Mode — use password:{" "}
+          <span className="font-semibold text-black">{DEMO_ADMIN_PASSWORD}</span>
+        </p>
       </form>
     </section>
   );

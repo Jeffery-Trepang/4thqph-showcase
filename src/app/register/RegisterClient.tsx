@@ -4,17 +4,12 @@ import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Calendar from "@/components/Calendar";
 import { SESSION_TYPES, sessionTypeFromSlug } from "@/lib/sessions";
-
-interface Session {
-  id: number;
-  date: string;
-  startTime: string;
-  endTime: string;
-  type: string;
-  notes: string | null;
-}
+import { getMockAvailability, type MockSession } from "@/lib/mock-data";
 
 const GENDERS = ["Male", "Female", "Prefer not to say"] as const;
+
+const DEMO_MESSAGE =
+  "Demo Mode: Booking received! (This is a showcase website, no data was saved.)";
 
 function prettyDate(iso: string): string {
   const [y, m, d] = iso.split("-").map(Number);
@@ -36,10 +31,8 @@ export default function RegisterClient() {
     () => sessionTypeFromSlug(searchParams.get("type")) ?? ""
   );
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
-  const [availability, setAvailability] = useState<Session[]>([]);
-  const [loadingAvail, setLoadingAvail] = useState(false);
-  const [availError, setAvailError] = useState("");
-  const [selectedSession, setSelectedSession] = useState<Session | null>(null);
+  const [availability, setAvailability] = useState<MockSession[]>([]);
+  const [selectedSession, setSelectedSession] = useState<MockSession | null>(null);
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -47,84 +40,34 @@ export default function RegisterClient() {
   const [participants, setParticipants] = useState("");
   const [gender, setGender] = useState("");
 
-  const [submitting, setSubmitting] = useState(false);
-  const [result, setResult] = useState<{
-    status: "success" | "error";
-    message: string;
-    warning?: string;
-  } | null>(null);
+  const [demoMessage, setDemoMessage] = useState<string | null>(null);
 
   function chooseType(type: string) {
     setSessionType(type);
     setSelectedDate(null);
     setAvailability([]);
     setSelectedSession(null);
-    setAvailError("");
-    setResult(null);
+    setDemoMessage(null);
   }
 
-  async function chooseDate(date: string) {
+  function chooseDate(date: string) {
     setSelectedDate(date);
     setSelectedSession(null);
-    setResult(null);
-    setAvailError("");
-    setLoadingAvail(true);
-    try {
-      const res = await fetch(
-        `/api/availability?date=${encodeURIComponent(date)}&type=${encodeURIComponent(sessionType)}`
-      );
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to load availability");
-      setAvailability(Array.isArray(data.sessions) ? data.sessions : []);
-    } catch (err) {
-      setAvailError(err instanceof Error ? err.message : "Failed to load availability");
-      setAvailability([]);
-    } finally {
-      setLoadingAvail(false);
-    }
+    setDemoMessage(null);
+    // Demo Mode: availability comes from local mock data, not an API.
+    setAvailability(getMockAvailability(date, sessionType));
   }
 
-  async function handleSubmit(e: React.FormEvent) {
+  function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!selectedSession) return;
-    setSubmitting(true);
-    setResult(null);
-    try {
-      const res = await fetch("/api/bookings", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          sessionId: selectedSession.id,
-          firstName,
-          lastName,
-          email,
-          participants: Number(participants),
-          gender,
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setResult({ status: "error", message: data.error || "Registration failed" });
-        return;
-      }
-      setResult({
-        status: "success",
-        message: "Registration successful! We'll see you there.",
-        warning: data.warning,
-      });
-      setFirstName("");
-      setLastName("");
-      setEmail("");
-      setParticipants("");
-      setGender("");
-    } catch (err) {
-      setResult({
-        status: "error",
-        message: err instanceof Error ? err.message : "Registration failed",
-      });
-    } finally {
-      setSubmitting(false);
-    }
+    // Demo Mode: no network request — just show the confirmation and reset.
+    setDemoMessage(DEMO_MESSAGE);
+    setFirstName("");
+    setLastName("");
+    setEmail("");
+    setParticipants("");
+    setGender("");
   }
 
   return (
@@ -177,11 +120,7 @@ export default function RegisterClient() {
                       Availability for &apos;{weekdayOf(selectedDate)}&apos;, &apos;
                       {prettyDate(selectedDate)}&apos;
                     </p>
-                    {loadingAvail ? (
-                      <p className="mt-4 text-sm text-neutral-500">Loading…</p>
-                    ) : availError ? (
-                      <p className="mt-4 text-sm text-red-600">{availError}</p>
-                    ) : availability.length === 0 ? (
+                    {availability.length === 0 ? (
                       <p className="mt-4 text-sm text-neutral-500">
                         No sessions available for this date. Please pick another
                         date.
@@ -194,7 +133,7 @@ export default function RegisterClient() {
                               type="button"
                               onClick={() => {
                                 setSelectedSession(s);
-                                setResult(null);
+                                setDemoMessage(null);
                               }}
                               className={`w-full rounded-md border px-4 py-3 text-left text-sm font-medium transition-colors ${
                                 selectedSession?.id === s.id
@@ -306,26 +245,29 @@ export default function RegisterClient() {
 
             <button
               type="submit"
-              disabled={submitting}
-              className="mt-6 w-full rounded-md bg-roseGold px-6 py-3 text-sm font-semibold uppercase tracking-wide text-white transition-colors hover:bg-roseGold-dark disabled:opacity-50"
+              className="mt-6 w-full rounded-md bg-roseGold px-6 py-3 text-sm font-semibold uppercase tracking-wide text-white transition-colors hover:bg-roseGold-dark"
             >
-              {submitting ? "Submitting…" : "Register Now"}
+              Register Now
             </button>
           </form>
         )}
 
-        {result && (
-          <div
-            className={`mt-8 rounded-md p-4 ${
-              result.status === "success"
-                ? "bg-green-50 text-green-800"
-                : "bg-red-50 text-red-800"
-            }`}
-          >
-            <p className="text-sm font-medium">{result.message}</p>
-            {result.warning && (
-              <p className="mt-2 text-sm text-amber-700">{result.warning}</p>
-            )}
+        {/* Demo Mode confirmation modal */}
+        {demoMessage && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+            <div
+              role="dialog"
+              aria-modal="true"
+              className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl"
+            >
+              <p className="text-base font-medium text-black">{demoMessage}</p>
+              <button
+                onClick={() => setDemoMessage(null)}
+                className="mt-5 w-full rounded-md bg-roseGold px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-roseGold-dark"
+              >
+                OK
+              </button>
+            </div>
           </div>
         )}
       </div>

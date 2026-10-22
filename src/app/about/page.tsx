@@ -61,7 +61,7 @@ export default function AboutPage() {
           <div className="aspect-[4/3] w-full overflow-hidden rounded-lg">
             <img
               src="/about_2.jpg"
-              alt="John Pizza"
+              alt="John Piazza"
               className="h-full w-full object-cover object-center"
             />
           </div>
@@ -69,7 +69,7 @@ export default function AboutPage() {
             <h2 className="text-4xl font-extrabold leading-tight text-white sm:text-5xl">
               JOHN
               <br />
-              PIZZA
+              PIAZZA
             </h2>
             <p className="mt-6 text-sm leading-relaxed text-white/95 sm:text-base">
               John Piazza is a graduate of Queen&apos;s University with a

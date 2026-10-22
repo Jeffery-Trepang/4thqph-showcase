@@ -1,14 +1,15 @@
-import { cookies } from "next/headers";
-import { adminToken, ADMIN_COOKIE } from "@/lib/auth";
+"use client";
+
+import { useState } from "react";
 import AdminLogin from "@/components/AdminLogin";
 import AdminDashboard from "@/components/AdminDashboard";
 
-export const dynamic = "force-dynamic";
-
 export default function AdminPage() {
-  const token = cookies().get(ADMIN_COOKIE)?.value;
-  const authenticated =
-    !!process.env.ADMIN_PASSWORD && !!token && token === adminToken();
+  const [authenticated, setAuthenticated] = useState(false);
 
-  return authenticated ? <AdminDashboard /> : <AdminLogin />;
+  return authenticated ? (
+    <AdminDashboard onLogout={() => setAuthenticated(false)} />
+  ) : (
+    <AdminLogin onSuccess={() => setAuthenticated(true)} />
+  );
 }
