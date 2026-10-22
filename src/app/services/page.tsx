@@ -39,7 +39,7 @@ export default function ServicesPage() {
 
             <div className="mt-6 aspect-[16/9] w-full overflow-hidden rounded-lg">
               <img
-                src={service.image}
+                src={`${process.env.NEXT_PUBLIC_BASE_PATH || ""}${service.image}`}
                 alt={service.title}
                 className="h-full w-full object-cover object-center"
               />
